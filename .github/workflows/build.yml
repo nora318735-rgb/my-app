@@ -15,9 +15,10 @@ jobs:
       - name: Extract ZIP File
         run: unzip DhiqarTV2027_FINAL_READY.zip -d my_project
 
-      - name: Inject Exact Match UI
+      - name: Force Clean and Inject Original UI
         run: |
           cd my_project
+          rm -rf app/src/main/assets/index.html
           cat << 'EOF' > app/src/main/assets/index.html
           <!doctype html>
           <html lang="ar" dir="rtl">
@@ -26,73 +27,57 @@ jobs:
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
           <title>ذي قار TV 2027</title>
           <style>
-              :root {
-                  --bg-main: #020712;
-                  --bg-panel: #061121;
-                  --border: #12335e;
-                  --accent: #0077ff;
-                  --gold: #ffd23f;
-                  --text-main: #ffffff;
-                  --text-muted: #8ba2c2;
-              }
+              :root { --bg: #020712; --panel: #061121; --border: #12335e; --accent: #0077ff; --gold: #ffd23f; --text: #ffffff; --muted: #8ba2c2; }
               * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-              html, body { width: 100%; height: 100%; overflow: hidden; position: fixed; background: var(--bg-main); color: var(--text-main); }
+              html, body { width: 100%; height: 100%; overflow: hidden; position: fixed; background: var(--bg); color: var(--text); }
               body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(circle at 50% 10%, #08264e 0%, transparent 60%); z-index: -1; }
 
-              /* شاشة تسجيل الدخول (3 خانات) */
-              #login-screen { position: absolute; inset: 0; background: #020712; display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 15px; }
-              .login-card { background: rgba(6, 17, 33, 0.95); border: 1px solid var(--border); padding: 25px; border-radius: 16px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
+              /* شاشة تسجيل الدخول بالثلاث خانات المطلوبة */
+              #login-screen { position: absolute; inset: 0; background: #020712; display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 15px; }
+              .login-card { background: rgba(6, 17, 33, 0.98); border: 1px solid var(--border); padding: 25px; border-radius: 16px; width: 100%; max-width: 380px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
               .login-card img { width: 70px; height: 70px; border-radius: 14px; margin-bottom: 10px; }
               .login-card h2 { color: #fff; font-size: 20px; margin-bottom: 4px; }
               .login-card h2 span { color: var(--gold); }
-              .login-card p { color: var(--text-muted); font-size: 11px; margin-bottom: 15px; }
+              .login-card p { color: var(--muted); font-size: 11px; margin-bottom: 15px; }
               .input-box { margin-bottom: 10px; text-align: right; }
               .input-box label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 3px; font-weight: bold; }
               .input-box input { width: 100%; padding: 10px; background: #020814; border: 1px solid var(--border); color: #fff; border-radius: 6px; font-size: 13px; outline: none; }
               .login-btn { width: 100%; padding: 12px; margin-top: 8px; background: linear-gradient(135deg, #0077ff, #0044bb); color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
               #login-err { color: #ff4d4d; font-size: 11px; margin-top: 8px; display: none; }
 
-              /* واجهة التطبيق المطابقة للصورة */
+              /* الواجهة الرئيسية */
               #app-ui { display: none; width: 100%; height: 100%; flex-direction: column; overflow: hidden; }
-              
-              /* الهيدر العلوي */
-              header { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+              header { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: var(--panel); border-bottom: 1px solid var(--border); flex-shrink: 0; }
               .logo-area { display: flex; align-items: center; gap: 8px; }
               .logo-area img { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; }
               .logo-area h1 { font-size: 15px; margin: 0; }
               .logo-area h1 span { color: var(--gold); }
               .status-badge { background: rgba(0, 255, 136, 0.1); color: #00ff88; padding: 2px 8px; border-radius: 10px; font-size: 10px; border: 1px solid #00ff88; font-weight: bold; }
 
-              /* شريط الأيقونات الأفقية (مطابق للصورة الثانية تماماً) */
               .top-menu-bar { display: flex; gap: 6px; padding: 8px 12px; background: rgba(6, 17, 33, 0.7); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; flex-shrink: 0; justify-content: center; }
-              .top-menu-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: #040e1c; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+              .top-menu-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: #040e1c; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
               .top-menu-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: bold; box-shadow: 0 0 10px rgba(0,119,255,0.4); }
 
-              /* المحتوى الرئيسي */
               .main-container { display: flex; flex: 1; height: calc(100% - 98px); overflow: hidden; padding: 8px; gap: 8px; }
-              
-              /* قائمة القنوات */
-              .channels-panel { width: 280px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
+              .channels-panel { width: 280px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
               .search-box { padding: 8px; border-bottom: 1px solid var(--border); }
               .search-box input { width: 100%; padding: 8px; background: #020814; border: 1px solid var(--border); color: #fff; border-radius: 6px; outline: none; font-size: 11px; }
-              .channels-list { flex: 1; overflow-y: auto; padding: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+              .channels-list { flex: 1; overflow-y: auto; padding: 6px; scrollbar-width: none; }
               
               .channel-item { display: flex; align-items: center; padding: 8px; background: #040e1c; border: 1px solid var(--border); border-radius: 7px; margin-bottom: 5px; cursor: pointer; }
               .channel-item:active, .channel-item.focus { border-color: var(--accent); background: #0b1f3d; }
               .channel-item img { width: 38px; height: 26px; object-fit: contain; background: #000; border-radius: 4px; margin-left: 6px; flex-shrink: 0; }
               .channel-info { flex: 1; overflow: hidden; }
               .channel-info h4 { font-size: 11px; margin: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-              .channel-info p { font-size: 9px; color: var(--text-muted); margin: 2px 0 0; }
+              .channel-info p { font-size: 9px; color: var(--muted); margin: 2px 0 0; }
               .live-badge { font-size: 8px; background: #ff2a2a; color: #fff; padding: 1px 4px; border-radius: 3px; font-weight: bold; flex-shrink: 0; }
 
-              /* المشغل والمعلومات */
               .player-panel { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-              .video-container { background: #000; border: 1px solid var(--border); border-radius: 10px; height: 60%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 12px; position: relative; overflow: hidden; }
-              .info-container { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; flex: 1; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+              .video-container { background: #000; border: 1px solid var(--border); border-radius: 10px; height: 60%; display: flex; justify-content: center; align-items: center; color: var(--muted); font-size: 12px; position: relative; overflow: hidden; }
+              .info-container { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; flex: 1; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
               .info-container h2 { font-size: 15px; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-              .info-container p { color: var(--text-muted); font-size: 11px; }
+              .info-container p { color: var(--muted); font-size: 11px; }
 
-              /* تصميم الموبايل */
               @media (max-width: 800px) {
                   .main-container { flex-direction: column; padding: 5px; gap: 5px; }
                   .player-panel { height: 190px; flex: none; gap: 0; }
@@ -103,7 +88,7 @@ jobs:
           </head>
           <body>
           
-          <!-- شاشة تسجيل الدخول -->
+          <!-- شاشة تسجيل الدخول بالبداية (3 خانات) -->
           <div id="login-screen">
               <div class="login-card">
                   <img src="splash_crop.png" onerror="this.src='ic_launcher.png'">
@@ -119,17 +104,16 @@ jobs:
               </div>
           </div>
           
-          <!-- واجهة التطبيق -->
+          <!-- الواجهة الرئيسية -->
           <div id="app-ui">
               <header>
                   <div class="logo-area">
                       <img src="splash_crop.png" onerror="this.src='ic_launcher.png'">
                       <h1>ذي قار TV <span>2027</span></h1>
                   </div>
-                  <div class="status-badge" id="app-status">اشتراك نشط</div>
+                  <div class="status-badge" id="app-status">نشط</div>
               </header>
 
-              <!-- شريط الأيقونات المطابق لطلبك -->
               <div class="top-menu-bar">
                   <button class="top-menu-btn active" onclick="setCat('all')"><span>📺</span>القنوات المباشرة</button>
                   <button class="top-menu-btn" onclick="setCat('sport')"><span>⚽</span>مباريات اليوم</button>
@@ -184,7 +168,7 @@ jobs:
               filteredChannels = allChannels.filter(c => (currentCat === 'all' || c.category === currentCat) && (!q || (c.name || '').toLowerCase().includes(q)));
               let container = document.getElementById('channels-container');
               container.innerHTML = '';
-              if(!filteredChannels.length){ container.innerHTML = '<div style="text-align:center; padding:15px; color:#8ba2c2; font-size:11px;">لا توجد قنوات.</div>'; return; }
+              if(!filteredChannels.length){ container.innerHTML = '<div style="text-align:center; padding:15px; color:#8ba2c2; font-size:11px;">لا توجد قنوات مطابقة.</div>'; return; }
               
               filteredChannels.slice(0, 150).forEach((ch, index) => {
                   let item = document.createElement('div');
