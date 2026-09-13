@@ -1,40 +1,323 @@
-name: Build APK
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ذي قار TV 2027</title>
+<style>
+    :root {
+        --bg-main: #020917;
+        --bg-panel: #091a33;
+        --border: #132f55;
+        --accent: #0088ff;
+        --accent-hover: #0066cc;
+        --gold: #ffd23f;
+        --text-main: #ffffff;
+        --text-muted: #8ba2c2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; touch-action: manipulation; }
+    body { background: var(--bg-main); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    
+    /* خلفية متدرجة فخمة */
+    body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(circle at 50% 0%, #0c2b5e 0%, transparent 50%); z-index: -1; }
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    /* ========== شاشة تسجيل الدخول ========== */
+    #login-screen { position: fixed; inset: 0; background: var(--bg-main); background-image: radial-gradient(circle at top, #0a2453, #020917); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .login-card { background: rgba(9, 26, 51, 0.85); border: 1px solid var(--border); padding: 35px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+    .login-card img { width: 90px; height: 90px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 0 20px rgba(0, 136, 255, 0.3); }
+    .login-card h2 { color: var(--text-main); margin-bottom: 5px; font-size: 24px; }
+    .login-card h2 span { color: var(--gold); }
+    .login-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 25px; }
+    .input-group { margin-bottom: 15px; text-align: right; }
+    .input-group label { display: block; font-size: 12px; color: var(--accent); margin-bottom: 5px; font-weight: bold; }
+    .login-card input { width: 100%; padding: 14px; background: #030d22; border: 1px solid var(--border); color: #fff; border-radius: 10px; font-size: 15px; outline: none; transition: 0.3s; }
+    .login-card input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 136, 255, 0.3); }
+    .login-card button { width: 100%; padding: 15px; margin-top: 10px; background: linear-gradient(90deg, #0088ff, #0055ff); color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 136, 255, 0.4); transition: 0.2s; }
+    .login-card button:active { transform: scale(0.96); }
+    #login-error { color: #ff4d4d; font-size: 13px; margin-top: 15px; display: none; }
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    /* ========== واجهة التطبيق الرئيسية ========== */
+    #app-ui { display: none; height: 100vh; flex-direction: column; }
+    
+    /* الهيدر */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(9, 26, 51, 0.9); border-bottom: 1px solid var(--border); }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-area img { width: 40px; height: 40px; border-radius: 8px; }
+    .logo-area h1 { font-size: 18px; margin: 0; }
+    .logo-area h1 span { color: var(--gold); }
+    .status-area { text-align: left; }
+    .status-area .date { font-size: 12px; color: var(--text-muted); }
+    .status-area .active-badge { background: rgba(0, 255, 136, 0.1); color: #00ff88; padding: 4px 10px; border-radius: 20px; font-size: 11px; border: 1px solid #00ff88; display: inline-block; margin-top: 4px; }
 
-      - name: Extract ZIP File
-        run: unzip DhiqarTV2027_FINAL_READY.zip -d my_project
+    /* المحتوى الرئيسي مقسم 3 أقسام */
+    .main-container { display: flex; flex: 1; overflow: hidden; padding: 15px; gap: 15px; }
 
-      - name: Update Server Info
-        run: |
-          cd my_project
-          sed -i 's|http://a83967.xyz:8080|http://vod4k.cc:80|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
-          sed -i 's|"106253449142"|"3143771383105485"|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
-          sed -i 's|"510546558453"|"5846751342"|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
+    /* 1. القائمة الجانبية (التصنيفات) */
+    .sidebar { width: 220px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
+    .sidebar-title { padding: 15px; font-weight: bold; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+    .categories { flex: 1; overflow-y: auto; padding: 10px; }
+    .cat-btn { width: 100%; text-align: right; padding: 12px 15px; background: transparent; border: 1px solid transparent; color: var(--text-muted); border-radius: 10px; margin-bottom: 5px; cursor: pointer; font-size: 14px; transition: 0.2s; display: flex; justify-content: space-between; }
+    .cat-btn:hover { background: rgba(255,255,255,0.05); }
+    .cat-btn.active { background: var(--accent); color: #fff; box-shadow: 0 4px 15px rgba(0, 136, 255, 0.3); font-weight: bold; }
+    .cat-btn .count { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 6px; font-size: 11px; }
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+    /* 2. قائمة القنوات */
+    .channels-panel { width: 320px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; }
+    .search-box { padding: 15px; border-bottom: 1px solid var(--border); }
+    .search-box input { width: 100%; padding: 10px 15px; background: #030d22; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; }
+    .channels-list { flex: 1; overflow-y: auto; padding: 10px; }
+    .channel-item { display: flex; align-items: center; padding: 10px; background: #061224; border: 1px solid transparent; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
+    .channel-item:hover, .channel-item.focus { border-color: var(--accent); background: #091e3d; transform: translateX(-3px); }
+    .channel-item img { width: 45px; height: 30px; object-fit: contain; background: rgba(255,255,255,0.1); border-radius: 4px; margin-left: 10px; }
+    .channel-info { flex: 1; overflow: hidden; }
+    .channel-info h4 { font-size: 13px; margin: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .channel-info p { font-size: 11px; color: var(--text-muted); margin: 2px 0 0; }
+    .live-badge { font-size: 9px; background: #ff2a2a; color: #fff; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
 
-      - name: Build APK
-        run: |
-          cd my_project
-          gradle assembleDebug
+    /* 3. منطقة المشغل والمعلومات */
+    .player-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+    .video-container { background: #000; border: 1px solid var(--border); border-radius: 15px; height: 60%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .info-container { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 15px; flex: 1; padding: 20px; }
+    .info-container h2 { font-size: 24px; color: #fff; margin-bottom: 10px; }
+    .info-container p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+    .action-buttons { display: flex; gap: 10px; }
+    .action-btn { padding: 10px 20px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    .action-btn.primary { background: var(--accent); border-color: var(--accent); }
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: DhiqarTV_App
-          path: my_project/app/build/outputs/apk/debug/*.apk
+    /* ========== تصميم الموبايل (ذكي ومخصص للمس) ========== */
+    @media (max-width: 900px) {
+        .main-container { flex-direction: column; padding: 10px; gap: 10px; }
+        
+        /* المشغل يصير فوق ثابت */
+        .player-panel { height: 250px; flex: none; gap: 0; }
+        .video-container { height: 100%; border-radius: 10px; }
+        .info-container { display: none; } /* نخفي المعلومات لتوفير مساحة */
+        
+        /* التصنيفات تصير شريط افقي قابل للسحب */
+        .sidebar { width: 100%; height: 60px; flex: none; flex-direction: row; border-radius: 10px; overflow: hidden; }
+        .sidebar-title { display: none; }
+        .categories { display: flex; flex-direction: row; padding: 10px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
+        .cat-btn { width: auto; margin-bottom: 0; margin-left: 10px; padding: 8px 15px; flex-shrink: 0; border-radius: 20px; }
+        
+        /* القنوات تاخذ باقي الشاشة */
+        .channels-panel { width: 100%; flex: 1; border-radius: 10px; }
+        .search-box { padding: 10px; }
+        
+        header { padding: 10px; }
+        .logo-area h1 { font-size: 16px; }
+    }
+</style>
+</head>
+<body>
+
+<!-- شاشة تسجيل الدخول المتطورة -->
+<div id="login-screen">
+    <div class="login-card">
+        <img src="splash_crop.png" onerror="this.src='ic_launcher.png'">
+        <h2>ذي قار TV <span>2027</span></h2>
+        <p>قم بتسجيل الدخول للاستمتاع بالبث المباشر</p>
+        
+        <div class="input-group">
+            <label>كود التفعيل (أو اليوزرنيم)</label>
+            <input type="text" id="xtream-user" placeholder="أدخل كود الاشتراك هنا..." value="2027">
+        </div>
+        
+        <button onclick="performLogin()">تسجيل الدخول</button>
+        <div id="login-error">البيانات غير صحيحة، يرجى التأكد!</div>
+    </div>
+</div>
+
+<!-- واجهة التطبيق -->
+<div id="app-ui">
+    <header>
+        <div class="logo-area">
+            <img src="splash_crop.png" onerror="this.src='ic_launcher.png'">
+            <h1>ذي قار TV <span>2027</span></h1>
+        </div>
+        <div class="status-area">
+            <div class="date" id="date-time">يتم التحميل...</div>
+            <div class="active-badge" id="app-status">متصل بالسيرفر</div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- 1. التصنيفات -->
+        <div class="sidebar">
+            <div class="sidebar-title">التصنيفات</div>
+            <div class="categories" id="cat-list">
+                <button class="cat-btn active" data-cat="all">الكل <span class="count" id="total-count">0</span></button>
+                <button class="cat-btn" data-cat="sport">الرياضة <span class="count">-</span></button>
+                <button class="cat-btn" data-cat="movies">الأفلام <span class="count">-</span></button>
+                <button class="cat-btn" data-cat="news">الأخبار <span class="count">-</span></button>
+                <button class="cat-btn" data-cat="kids">الأطفال <span class="count">-</span></button>
+                <button class="cat-btn" data-cat="iraq">العراقية <span class="count">-</span></button>
+            </div>
+        </div>
+
+        <!-- 2. القنوات -->
+        <div class="channels-panel">
+            <div class="search-box">
+                <input type="text" id="search" placeholder="ابحث عن قناة...">
+            </div>
+            <div class="channels-list" id="channels-container">
+                <div style="text-align:center; padding: 20px; color:#8ba2c2;">جاري جلب القنوات...</div>
+            </div>
+        </div>
+
+        <!-- 3. المشغل -->
+        <div class="player-panel">
+            <div class="video-container">
+                <span id="player-placeholder">اختر قناة لبدء البث المباشر</span>
+            </div>
+            <div class="info-container">
+                <h2 id="now-playing-title">ذي قار TV 2027</h2>
+                <p id="now-playing-desc">جاهز للعمل - 4K PRO IPTV</p>
+                <div class="action-buttons">
+                    <button class="action-btn primary">★ إضافة للمفضلة</button>
+                    <button class="action-btn">📺 جودة البث</button>
+                    <button class="action-btn">📋 دليل البرامج (EPG)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ----- نظام تسجيل الدخول -----
+function performLogin() {
+    const userCode = document.getElementById('xtream-user').value.trim();
+    // نقبل الكود 2027 أو أي كود يكتبه المستخدم لسهولة الدخول بما أن الجافا هي الي تتصل
+    if(userCode.length > 2) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-ui').style.display = 'flex';
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
+}
+
+// ----- نظام إدارة القنوات الذكي والمسرع -----
+let allChannels = [];
+let filteredChannels = [];
+let currentIdx = 0;
+let currentCat = 'all';
+
+function renderChannels() {
+    let query = document.getElementById('search').value.trim().toLowerCase();
+    
+    // فلترة حسب القسم والبحث
+    filteredChannels = allChannels.filter(c => 
+        (currentCat === 'all' || c.category === currentCat) &&
+        (!query || (c.name || '').toLowerCase().includes(query))
+    );
+    
+    currentIdx = Math.max(0, Math.min(currentIdx, filteredChannels.length - 1));
+    document.getElementById('total-count').textContent = allChannels.length;
+    
+    let container = document.getElementById('channels-container');
+    container.innerHTML = '';
+    
+    if(!filteredChannels.length){
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#8ba2c2;">لا توجد قنوات مطابقة.</div>';
+        return;
+    }
+    
+    // عرض أول 150 قناة فقط لضمان عدم تعليق شاشة الموبايل (تسريع اللمس)
+    let displayLimit = 150;
+    let listToRender = filteredChannels.slice(0, displayLimit);
+    
+    listToRender.forEach((ch, index) => {
+        let item = document.createElement('div');
+        item.className = 'channel-item' + (index === currentIdx ? ' focus' : '');
+        
+        let safeName = String(ch.name || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]; });
+        let safeLogo = String(ch.logo || '').replace(/[&<>"']/g, '');
+        
+        item.innerHTML = `
+            <img src="${safeLogo}" onerror="this.style.opacity='0'">
+            <div class="channel-info">
+                <h4>${safeName}</h4>
+                <p>القناة ${String(ch.id).padStart(3, '0')}</p>
+            </div>
+            <div class="live-badge">LIVE</div>
+        `;
+        
+        // ربط أحداث اللمس والنقر بشكل صحيح
+        item.onclick = function() { playSelectedChannel(index); };
+        
+        container.appendChild(item);
+    });
+    
+    if(filteredChannels.length > displayLimit){
+        let note = document.createElement('div');
+        note.style.cssText = "text-align:center; padding:15px; color:#647996; font-size:12px;";
+        note.innerText = "تم عرض أول " + displayLimit + " قناة لضمان السرعة. استخدم البحث.";
+        container.appendChild(note);
+    }
+}
+
+function playSelectedChannel(index) {
+    let ch = filteredChannels[index];
+    if(!ch) return;
+    
+    currentIdx = index;
+    
+    // تحديث التحديد بالشاشة
+    let items = document.getElementById('channels-container').children;
+    for(let i=0; i<items.length; i++) {
+        if(items[i].classList && items[i].classList.contains('channel-item')) {
+            items[i].classList.remove('focus');
+        }
+    }
+    if(items[index]) {
+        items[index].classList.add('focus');
+        items[index].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    }
+    
+    // تحديث المعلومات وتمرير التشغيل للجافا
+    document.getElementById('now-playing-title').textContent = ch.name;
+    document.getElementById('now-playing-desc').textContent = 'جاري التشغيل الآن...';
+    document.getElementById('player-placeholder').style.display = 'none';
+    
+    if(window.AndroidPlayer) {
+        AndroidPlayer.play(ch.streamId);
+    }
+}
+
+// الدالة اللي تستقبل القنوات من الـ Java (MainActivity.java)
+window.setChannels = function(jsonStr) {
+    try {
+        allChannels = JSON.parse(jsonStr) || [];
+        document.getElementById('app-status').textContent = 'متصل ( ' + allChannels.length + ' قناة )';
+        renderChannels();
+    } catch(e) {
+        document.getElementById('app-status').textContent = 'خطأ بالبيانات';
+    }
+};
+
+// تشغيل البحث
+document.getElementById('search').addEventListener('input', () => {
+    currentIdx = 0;
+    renderChannels();
+});
+
+// تشغيل التصنيفات (الأزرار الجانبية)
+document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.onclick = function() {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentCat = this.getAttribute('data-cat');
+        currentIdx = 0;
+        renderChannels();
+    };
+});
+
+// الوقت والتاريخ
+function updateTime() {
+    let d = new Date();
+    document.getElementById('date-time').innerHTML = d.toLocaleDateString('ar-IQ', {weekday:'long', month:'long', day:'numeric'}) + ' - <b>' + d.toLocaleTimeString('ar-IQ', {hour:'2-digit', minute:'2-digit'}) + '</b>';
+}
+updateTime();
+setInterval(updateTime, 60000);
+</script>
+</body>
+</html>
