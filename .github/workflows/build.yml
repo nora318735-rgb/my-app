@@ -1,42 +1,33 @@
-name: Build IPTV App
+name: Build APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Extract ZIP File
+        run: unzip DhiqarTV2027_FINAL_READY.zip -d my_project
 
-    - name: Extract ZIP
-      # هذا الأمر سيفك ضغط أي ملف zip موجود في المستودع
-      run: unzip -q *.zip -d app_source
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Build APK
-      run: |
-        # البحث التلقائي عن مسار المشروع داخل المجلد المفكوك
-        PROJECT_DIR=$(dirname $(find app_source -name "gradlew" | head -n 1))
-        cd $PROJECT_DIR
-        
-        # إعطاء صلاحية التشغيل للملف وبناء التطبيق
-        chmod +x gradlew
-        ./gradlew assembleDebug
+      - name: Build APK with Gradle
+        run: |
+          cd my_project
+          gradle assembleDebug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: DhiQar-TV-APK
-        # سحب ملف الـ APK النهائي بعد انتهاء البناء
-        path: app_source/**/app/build/outputs/apk/debug/*.apk
-        
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DhiqarTV_App
+          path: my_project/app/build/outputs/apk/debug/*.apk
