@@ -1,0 +1,40 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP File
+        run: unzip DhiqarTV2027_FINAL_READY.zip -d my_project
+
+      - name: Update Server Info
+        run: |
+          cd my_project
+          sed -i 's|http://a83967.xyz:8080|http://vod4k.cc:80|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
+          sed -i 's|"106253449142"|"3143771383105485"|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
+          sed -i 's|"510546558453"|"5846751342"|g' app/src/main/java/com/dhiqar/tv/MainActivity.java
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build APK
+        run: |
+          cd my_project
+          gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DhiqarTV_App
+          path: my_project/app/build/outputs/apk/debug/*.apk
